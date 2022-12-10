@@ -83,6 +83,7 @@
     <Compile Include="Behaviours\MoreMercsBehaviour.cs" />
     <Compile Include="Data\DataManager.cs" />
     <Compile Include="Data\MoreMercsSaveTypeDefiner.cs" />
+    <Compile Include="Data\SaveContainer.cs" />
     <Compile Include="Settings\GlobalModSettings.cs" />
     <Compile Include="Settings\ISettingVariables.cs" />
     <Compile Include="Settings\MCMSettings.cs" />

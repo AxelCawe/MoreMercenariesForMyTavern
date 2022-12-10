@@ -18,12 +18,12 @@ namespace MoreMercenariesForMyTavern.Data
         {
             // The Id's here are local and will be related to the Id passed to the constructor
             AddClassDefinition(typeof(MercenaryTavernEntity), 1);
+            AddClassDefinition(typeof(SaveContainer), 2);
         }
 
         protected override void DefineContainerDefinitions()
         {
-            ConstructContainerDefinition(typeof(List<MercenaryTavernEntity>));
-            ConstructContainerDefinition(typeof(Dictionary<Town, List<MercenaryTavernEntity>>));
+            ConstructContainerDefinition(typeof(Dictionary<Town, MercenaryTavernEntity>));
         }
     }
 }

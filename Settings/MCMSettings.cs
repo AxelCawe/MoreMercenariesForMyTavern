@@ -21,7 +21,7 @@ namespace MoreMercenariesForMyTavern.Settings
 
         [SettingPropertyInteger("{=settings_minMercenary}Minimum Number Of Mercenaries Per Type", minValue: GlobalModSettings.minMinMercenaryCount, maxValue: GlobalModSettings.maxMinMercenaryCount, Order = 1, HintText = "{=settings_minMercenary}Minimum number of mercenaries per type that can spawn per town.", RequireRestart = false)]
         public int minNumberOfMercenary { get; set; } = GlobalModSettings.minMinMercenaryCount;
-        [SettingPropertyInteger("{=settings_maxMercenary}Maximum Number Of Mercenaries Per Type", minValue: GlobalModSettings.minMaxMercenaryCount, maxValue: GlobalModSettings.maxMaxMercenaryCount, Order = 1, HintText = "{=settings_maxMercenary}Maximum number of mercenaries per type that can spawn per town. MUST BE HIGHER THAN ABOVE MINIMUM VALUE", RequireRestart = false)]
+        [SettingPropertyInteger("{=settings_maxMercenary}Maximum Number Of Mercenaries Per Type", minValue: GlobalModSettings.minMaxMercenaryCount, maxValue: GlobalModSettings.maxMaxMercenaryCount, Order = 2, HintText = "{=settings_maxMercenary}Maximum number of mercenaries per type that can spawn per town. MUST BE HIGHER THAN ABOVE MINIMUM VALUE", RequireRestart = false)]
         public int maxNumberOfMercenary { get; set; } = GlobalModSettings.minMaxMercenaryCount;
     }
 }

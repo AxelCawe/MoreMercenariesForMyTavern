@@ -42,7 +42,7 @@ namespace MoreMercenariesForMyTavern.Data
         public Dictionary<string, BasicCharacterObject> BasicCharacterObjects;
 
         [SaveableField(2)]
-        public Dictionary<Town, List<MercenaryTavernEntity>> MercenaryData;
+        public Dictionary<Town, MercenaryTavernEntity> MercenaryData;
   
         private string errorLog = string.Empty;
 
@@ -76,6 +76,9 @@ namespace MoreMercenariesForMyTavern.Data
             else
                 GenerateDefaultData();
 
+            if (_customMercenaryTypes.Count == 0)
+                GenerateDefaultData();
+
             List<CustomMercenaryDataTypeDefinition> correctedList = new List<CustomMercenaryDataTypeDefinition>();
             foreach (CustomMercenaryDataTypeDefinition typeDef in _customMercenaryTypes)
             {
@@ -83,7 +86,7 @@ namespace MoreMercenariesForMyTavern.Data
                 if (characterObject == null)
                 {
                     //_customMercenaryTypes.Remove(typeDef);
-                    errorLog += $"[Error]; Troop ID provided is not found!\n > TroopID: {typeDef.TroopID}";
+                    errorLog += $"[Error]; Troop ID provided is not found!\n > TroopID: {typeDef.TroopID}\n";
                 }
                 else
                 {
@@ -142,10 +145,6 @@ namespace MoreMercenariesForMyTavern.Data
             _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("wolfskins_tier_1", false, new string[] { "battania" }));
             _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("wolfskins_tier_2", false, new string[] { "battania" }));
             _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("wolfskins_tier_3", false, new string[] { "battania" }));
-            _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("sword_sisters_sister_t3", true, new string[]{ }));
-            _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("sword_sisters_sister_t4", true, new string[]{ }));
-            _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("sword_sisters_sister_t5", true, new string[]{ }));
-            _customMercenaryTypes.Add(new CustomMercenaryDataTypeDefinition("sword_sisters_sister_infantry_t5", true, new string[]{ }));
 
             XmlSerializer writer = new XmlSerializer(typeof(CustomMercenaryDataTypeDefinition[]));
             Directory.CreateDirectory(_dataDirectory);
@@ -193,7 +192,7 @@ namespace MoreMercenariesForMyTavern.Data
             SimpleAgentOrigin simpleAgentOrigin = new SimpleAgentOrigin(DataManager.Current.BasicCharacterObjects[TroopID], -1, null, default(UniqueTroopDescriptor));
             AgentData agentData = new AgentData(simpleAgentOrigin);
             Monster monsterWithSuffix = FaceGen.GetMonsterWithSuffix(DataManager.Current.BasicCharacterObjects[TroopID].Race, "_settlement");
-            LocationCharacter newLocChar = new LocationCharacter(agentData.Monster(monsterWithSuffix).NoHorses(true), new LocationCharacter.AddBehaviorsDelegate(SandBoxManager.Instance.AgentBehaviorManager.AddOutdoorWandererBehaviors), "spawnpoint_mercenary", true, relation, null, false, false, null, false, false, true);
+            LocationCharacter newLocChar = new LocationCharacter(agentData.Monster(monsterWithSuffix).NoHorses(true), new LocationCharacter.AddBehaviorsDelegate(SandBoxManager.Instance.AgentBehaviorManager.AddOutdoorWandererBehaviors), "spawnpoint_cust_mercenary", true, relation, null, false, false, null, false, false, true);
             LocationChar = newLocChar;
             return LocationChar;
         }

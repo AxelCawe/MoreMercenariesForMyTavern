@@ -11,8 +11,8 @@ namespace MoreMercenariesForMyTavern.Settings
         public const string moduleName = "MoreMercenariesForMyTavern";
 
         public const int minMinMercenaryCount = 1;
-        public const int maxMinMercenaryCount = 10;
+        public const int maxMinMercenaryCount = 100;
         public const int minMaxMercenaryCount = 1;
-        public const int maxMaxMercenaryCount = 10;
+        public const int maxMaxMercenaryCount = 100;
     }
 }
