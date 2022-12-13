@@ -46,17 +46,17 @@ namespace MoreMercenariesForMyTavern.Behaviours
             if (DataManager.Current.MercenaryData == null)
             {
                 DataManager.Current.MercenaryData = new Dictionary<Town, MercenaryTavernEntity>();
-                foreach (Settlement settlement in Campaign.Current.Settlements)
+                
+            }
+            foreach (Settlement settlement in Campaign.Current.Settlements)
+            {
+                if (settlement.IsTown && !DataManager.Current.MercenaryData.ContainsKey(settlement.Town))
                 {
-                    if (settlement.IsTown)
-                    {
-                        DataManager.Current.MercenaryData.Add(settlement.Town, null);
+                    DataManager.Current.MercenaryData.Add(settlement.Town, null);
 
-                        DailyTickTown(settlement.Town);
-                    }
+                    DailyTickTown(settlement.Town);
                 }
             }
-
 
         }
   
@@ -169,8 +169,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
         private void RemoveMercenaryCharactersFromTavern(Town town)
         {
 
-            Location tavern = town.Settlement.LocationComplex.GetLocationWithId("tavern");
             MercenaryTavernEntity modTavernData  = DataManager.Current.MercenaryData[town];
+            if (modTavernData == null)
+                return;
+            Location tavern = town.Settlement.LocationComplex.GetLocationWithId("tavern");
             {
                 LocationCharacter locationChar = modTavernData.LocationChar;
                 if (tavern != null && tavern.ContainsCharacter(locationChar))
