@@ -189,7 +189,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
             if (!Hero.MainHero.IsPrisoner && !town.Settlement.IsUnderSiege && town.Settlement.LocationComplex != null)
             {
                 Location tavern = town.Settlement.LocationComplex.GetLocationWithId("tavern");
-                if (tavern != null)
+                if (tavern != null && DataManager.Current.MercenaryData[town] != null)
                 {
                     for (int i = 0; i < DataManager.Current.MercenaryData[town].Count; ++i)
                         tavern.AddLocationCharacters(new CreateLocationCharacterDelegate(DataManager.Current.MercenaryData[town].AddCharacterData), town.Settlement.Culture, LocationCharacter.CharacterRelations.Neutral, 1);
@@ -250,8 +250,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Conditions for starting line dialog
         private bool conversation_mercenary_recruit_plural_start_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -273,8 +275,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
 
         private bool conversation_mercenary_recruit_single_start_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -296,8 +300,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Conditions for Hiring options and functions that follow
         private bool conversation_mercenary_recruit_accept_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -317,8 +323,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
 
         private bool conversation_mercenary_recruit_accept_some_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -348,16 +356,20 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Conditions close Conversation
         private bool conversation_mercenary_recruited_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-     
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
+
             return CustomMercenaryIsInTavern(currentTown);
         }
 
         private bool conversation_mercenary_recruit_reject_gold_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -373,8 +385,10 @@ namespace MoreMercenariesForMyTavern.Behaviours
 
         private bool conversation_mercenary_recruit_dont_need_men_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return false;
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+            if (DataManager.Current.MercenaryData[currentTown] == null)
+                return false;
             MercenaryTavernEntity mercenaryTavernEntity = null;
             MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
             {
@@ -399,7 +413,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Actual Hiring from Tavern
         private void HireCustomMercenariesInTavern(bool pastPartyLimit = false)
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown) return;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return;
             Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
             MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
         
@@ -440,7 +454,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
         private bool HireCustomMercenariesViaMenuConditionHireOne(MenuCallbackArgs args)
         {
             Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
             MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
 
             if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 1)
@@ -461,7 +475,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
         private bool HireCustomMercenariesViaMenuCondition(MenuCallbackArgs args)
         {
             Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
             MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
             if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
             {
@@ -483,7 +497,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
         private bool HireCustomMercenariesViaMenuConditionToPartyLimit(MenuCallbackArgs args)
         {
             Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
             MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
             if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
             {
@@ -507,7 +521,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
         private void HireCustomMercenariesViaGameMenu(bool buyingOne, bool toPartyLimit)
         {
             Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData[currentTown].Count == 0) return;
+            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return;
             MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
             if (mercenaryTavernEntity == null) return;
             int numOfTroopSlotsOpen = PartyBase.MainParty.PartySizeLimit - PartyBase.MainParty.NumberOfAllMembers;
