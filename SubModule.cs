@@ -21,9 +21,12 @@ namespace MoreMercenariesForMyTavern
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
         {
             base.OnGameStart(game, gameStarter);
+
             
             AddBehaviors(gameStarter as CampaignGameStarter);
         }
+
+        
 
         public override void AfterRegisterSubModuleObjects(bool isSavedCampaign)
         {

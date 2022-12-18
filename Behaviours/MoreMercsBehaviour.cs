@@ -33,6 +33,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
             CampaignEvents.DailyTickTownEvent.AddNonSerializedListener(this, new Action<Town>(DailyTickTown));
             CampaignEvents.SettlementEntered.AddNonSerializedListener(this, new Action<MobileParty, Settlement, Hero>(OnSettlementEntered));
             CampaignEvents.OnSettlementLeftEvent.AddNonSerializedListener(this, new Action<MobileParty, Settlement>(OnSettlementLeft));
+            CampaignEvents.LocationCharactersAreReadyToSpawnEvent.AddNonSerializedListener(this, new Action<Dictionary<string, int>>(OnLocationCharactersAreReadyToSpawn));
         }
 
         public override void SyncData(IDataStore dataStore)
@@ -41,8 +42,19 @@ namespace MoreMercenariesForMyTavern.Behaviours
             
         }
 
+        void OnLocationCharactersAreReadyToSpawn(Dictionary<string, int> data) 
+        {
+            if (Campaign.Current.MainParty.CurrentSettlement != null && Campaign.Current.MainParty.CurrentSettlement.IsTown)
+            {
+                Location locationWithId = Campaign.Current.MainParty.CurrentSettlement.LocationComplex.GetLocationWithId("tavern");
+                if (CampaignMission.Current.Location == locationWithId)
+                    AddCustomMercenaryCharacterToTavern(Campaign.Current.MainParty.CurrentSettlement.Town);
+            }
+        }
+
         void OnGameLoaded(CampaignGameStarter starter)
         {
+            
             if (DataManager.Current.MercenaryData == null)
             {
                 DataManager.Current.MercenaryData = new Dictionary<Town, MercenaryTavernEntity>();
@@ -131,7 +143,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
             {
                 if (!DataManager.Current.MercenaryData.ContainsKey(settlement.Town))
                     DataManager.Current.MercenaryData.Add(settlement.Town, null);
-                AddCustomMercenaryCharacterToTavern(settlement.Town);
+                //AddCustomMercenaryCharacterToTavern(settlement.Town);
             }
                 
         }
@@ -191,8 +203,7 @@ namespace MoreMercenariesForMyTavern.Behaviours
                 Location tavern = town.Settlement.LocationComplex.GetLocationWithId("tavern");
                 if (tavern != null && DataManager.Current.MercenaryData[town] != null)
                 {
-                    for (int i = 0; i < DataManager.Current.MercenaryData[town].Count; ++i)
-                        tavern.AddLocationCharacters(new CreateLocationCharacterDelegate(DataManager.Current.MercenaryData[town].AddCharacterData), town.Settlement.Culture, LocationCharacter.CharacterRelations.Neutral, 1);
+                    tavern.AddLocationCharacters(new CreateLocationCharacterDelegate(DataManager.Current.MercenaryData[town].AddCharacterData), town.Settlement.Culture, LocationCharacter.CharacterRelations.Neutral, 1);
                 }
             }
         }
@@ -250,51 +261,67 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Conditions for starting line dialog
         private bool conversation_mercenary_recruit_plural_start_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
-            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
-            if (DataManager.Current.MercenaryData[currentTown] == null)
-                return false;
-            MercenaryTavernEntity mercenaryTavernEntity = null;
-            MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
+            try
             {
-                if (entity.LocationChar.Character.Name == CharacterObject.OneToOneConversationCharacter.Name)
-                    mercenaryTavernEntity = entity;
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+                Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+                if (DataManager.Current.MercenaryData[currentTown] == null)
+                    return false;
+                MercenaryTavernEntity mercenaryTavernEntity = null;
+                MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
+                {
+                    if (entity.LocationChar.Character.Name == CharacterObject.OneToOneConversationCharacter.Name)
+                        mercenaryTavernEntity = entity;
+                }
+                if (mercenaryTavernEntity == null)
+                    return false;
+                bool flag = mercenaryTavernEntity.Count > 1 && CustomMercenaryIsInTavern(currentTown);
+                if (flag)
+                {
+                    int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(CharacterObject.OneToOneConversationCharacter, Hero.MainHero, false);
+                    MBTextManager.SetTextVariable("CMERCS_PLURAL", (mercenaryTavernEntity.Count > 1) ? 1 : 0);
+                    MBTextManager.SetTextVariable("CMERCS_MERCENARY_COUNT", mercenaryTavernEntity.Count - 1);
+                    MBTextManager.SetTextVariable("CMERCS_GOLD_AMOUNT", troopRecruitmentCost * mercenaryTavernEntity.Count);
+                }
+                return flag;
             }
-            if (mercenaryTavernEntity == null)
-                return false;
-            bool flag =  mercenaryTavernEntity.Count > 1 && CustomMercenaryIsInTavern(currentTown);
-            if (flag)
+            catch
             {
-                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(CharacterObject.OneToOneConversationCharacter, Hero.MainHero, false); 
-                MBTextManager.SetTextVariable("CMERCS_PLURAL", (mercenaryTavernEntity.Count > 1) ? 1 : 0);
-                MBTextManager.SetTextVariable("CMERCS_MERCENARY_COUNT", mercenaryTavernEntity.Count - 1);
-                MBTextManager.SetTextVariable("CMERCS_GOLD_AMOUNT", troopRecruitmentCost * mercenaryTavernEntity.Count);
+                return false;
             }
-            return flag;
         }
 
         private bool conversation_mercenary_recruit_single_start_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
-            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
-            if (DataManager.Current.MercenaryData[currentTown] == null)
-                return false;
-            MercenaryTavernEntity mercenaryTavernEntity = null;
-            MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
+            try
             {
-                if (entity.LocationChar.Character.Name == CharacterObject.OneToOneConversationCharacter.Name)
-                    mercenaryTavernEntity = entity;
-            }
-            if (mercenaryTavernEntity == null)
-                return false;
 
-            bool flag = mercenaryTavernEntity.Count == 1 && CustomMercenaryIsInTavern(currentTown);
-            if (flag)
-            {
-                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(CharacterObject.OneToOneConversationCharacter, Hero.MainHero, false);
-                MBTextManager.SetTextVariable("CMERCS_GOLD_AMOUNT", mercenaryTavernEntity.Count * troopRecruitmentCost);
+
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+                Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+                if (DataManager.Current.MercenaryData[currentTown] == null)
+                    return false;
+                MercenaryTavernEntity mercenaryTavernEntity = null;
+                MercenaryTavernEntity entity = DataManager.Current.MercenaryData[currentTown];
+                {
+                    if (entity.LocationChar.Character.Name == CharacterObject.OneToOneConversationCharacter.Name)
+                        mercenaryTavernEntity = entity;
+                }
+                if (mercenaryTavernEntity == null)
+                    return false;
+
+                bool flag = mercenaryTavernEntity.Count == 1 && CustomMercenaryIsInTavern(currentTown);
+                if (flag)
+                {
+                    int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(CharacterObject.OneToOneConversationCharacter, Hero.MainHero, false);
+                    MBTextManager.SetTextVariable("CMERCS_GOLD_AMOUNT", mercenaryTavernEntity.Count * troopRecruitmentCost);
+                }
+                return flag;
             }
-            return flag;
+            catch
+            {
+                return false;
+            }
         }
 
         // Conditions for Hiring options and functions that follow
@@ -356,12 +383,21 @@ namespace MoreMercenariesForMyTavern.Behaviours
         // Conditions close Conversation
         private bool conversation_mercenary_recruited_on_condition()
         {
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
-            Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
-            if (DataManager.Current.MercenaryData[currentTown] == null)
-                return false;
+            try
+            {
 
-            return CustomMercenaryIsInTavern(currentTown);
+
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null) return false;
+                Town currentTown = Campaign.Current.MainParty.CurrentSettlement.Town;
+                if (DataManager.Current.MercenaryData[currentTown] == null)
+                    return false;
+
+                return CustomMercenaryIsInTavern(currentTown);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private bool conversation_mercenary_recruit_reject_gold_on_condition()
@@ -453,92 +489,128 @@ namespace MoreMercenariesForMyTavern.Behaviours
         }
         private bool HireCustomMercenariesViaMenuConditionHireOne(MenuCallbackArgs args)
         {
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
-            MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
-
-            if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 1)
+            try
             {
-                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
-                int numOfTroopPlayerCanBuy = Hero.MainHero.Gold / troopRecruitmentCost;
-                if (numOfTroopPlayerCanBuy > 1)
+
+
+                Town currentTown = Hero.MainHero.CurrentSettlement.Town;
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown]==null ||DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+                MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
+
+                if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 1)
                 {
-                    MBTextManager.SetTextVariable("C_MERCENARY_NAME_ONLY_ONE", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
-                    MBTextManager.SetTextVariable("C_TOTAL_AMOUNT_ONLY_ONE", troopRecruitmentCost);
-                    args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
-                    return true;
+                    int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
+                    int numOfTroopPlayerCanBuy = Hero.MainHero.Gold / troopRecruitmentCost;
+                    if (numOfTroopPlayerCanBuy > 1)
+                    {
+                        MBTextManager.SetTextVariable("C_MERCENARY_NAME_ONLY_ONE", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
+                        MBTextManager.SetTextVariable("C_TOTAL_AMOUNT_ONLY_ONE", troopRecruitmentCost);
+                        args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
+            catch (Exception ex) { return false; }
+            
         }
 
         private bool HireCustomMercenariesViaMenuCondition(MenuCallbackArgs args)
         {
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
-            MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
-            if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
+            try
             {
-                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false); 
-                if (Hero.MainHero.Gold >= troopRecruitmentCost)
+                Town currentTown = Hero.MainHero.CurrentSettlement.Town;
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown] == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+                MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
+                if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
                 {
-                    int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
-                    int num = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
-                    MBTextManager.SetTextVariable("C_MEN_COUNT", num);
-                    MBTextManager.SetTextVariable("C_MERCENARY_NAME", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
-                    MBTextManager.SetTextVariable("C_TOTAL_AMOUNT", num * troopRecruitmentCost);
-                    args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
-                    return true;
+                    int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
+                    if (Hero.MainHero.Gold >= troopRecruitmentCost)
+                    {
+                        int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
+                        int num = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
+                        if (num == 0)
+                            return false;
+                        MBTextManager.SetTextVariable("C_MEN_COUNT", num);
+                        MBTextManager.SetTextVariable("C_MERCENARY_NAME", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
+                        MBTextManager.SetTextVariable("C_TOTAL_AMOUNT", num * troopRecruitmentCost);
+                        args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
+            catch (Exception ex)
+            {
+                if (Hero.MainHero.CurrentSettlement.IsTown)
+                    DailyTickTown(Hero.MainHero.CurrentSettlement.Town);
+                return false;
+            }
+            
         }
 
         private bool HireCustomMercenariesViaMenuConditionToPartyLimit(MenuCallbackArgs args)
         {
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
-            MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
-            if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
+            try
             {
-                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
-                int numOfTroopSlotsOpen = PartyBase.MainParty.PartySizeLimit - PartyBase.MainParty.NumberOfAllMembers;
-                int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
-                if (numOfTroopSlotsOpen > 0 && Hero.MainHero.Gold >= troopRecruitmentCost && numOfTroopSlotsOpen < mercenaryTavernEntity.Count && numOfTroopSlotsOpen < numOfTroopPlayerCanBuy)
+                Town currentTown = Hero.MainHero.CurrentSettlement.Town;
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown] == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return false;
+                MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
+                if (mercenaryTavernEntity != null && mercenaryTavernEntity.Count > 0)
                 {
-                    int numOfMercs = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
-                    numOfMercs = Math.Min(numOfTroopSlotsOpen, numOfMercs);
-                    MBTextManager.SetTextVariable("C_MEN_COUNT_PL", numOfMercs);
-                    MBTextManager.SetTextVariable("C_MERCENARY_NAME_PL", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
-                    MBTextManager.SetTextVariable("C_TOTAL_AMOUNT_PL", numOfMercs * troopRecruitmentCost);
-                    args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
-                    return true;
+                    int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
+                    int numOfTroopSlotsOpen = PartyBase.MainParty.PartySizeLimit - PartyBase.MainParty.NumberOfAllMembers;
+                    int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
+                    if (numOfTroopSlotsOpen > 0 && Hero.MainHero.Gold >= troopRecruitmentCost && numOfTroopSlotsOpen < mercenaryTavernEntity.Count && numOfTroopSlotsOpen < numOfTroopPlayerCanBuy)
+                    {
+                        int numOfMercs = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
+                        numOfMercs = Math.Min(numOfTroopSlotsOpen, numOfMercs);
+                        if (numOfMercs == 0)
+                            return false;
+                        MBTextManager.SetTextVariable("C_MEN_COUNT_PL", numOfMercs);
+                        MBTextManager.SetTextVariable("C_MERCENARY_NAME_PL", DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID].Name);
+                        MBTextManager.SetTextVariable("C_TOTAL_AMOUNT_PL", numOfMercs * troopRecruitmentCost);
+                        args.optionLeaveType = GameMenuOption.LeaveType.RansomAndBribe;
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
+            catch (Exception ex)
+            {
+                return false;
+            }
+           
         }
 
         private void HireCustomMercenariesViaGameMenu(bool buyingOne, bool toPartyLimit)
         {
-            Town currentTown = Campaign.Current.MainParty.LeaderHero.CurrentSettlement.Town;
-            if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return;
-            MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
-            if (mercenaryTavernEntity == null) return;
-            int numOfTroopSlotsOpen = PartyBase.MainParty.PartySizeLimit - PartyBase.MainParty.NumberOfAllMembers;
-            int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
-            if (mercenaryTavernEntity.Count > 0 && Hero.MainHero.Gold >= troopRecruitmentCost && (!toPartyLimit || numOfTroopSlotsOpen > 0))
+            try
             {
-                int numOfMercs = 1;
-                if (!buyingOne)
+                Town currentTown = Hero.MainHero.CurrentSettlement.Town;
+                if (MobileParty.MainParty.CurrentSettlement == null || !MobileParty.MainParty.CurrentSettlement.IsTown || DataManager.Current.MercenaryData == null || DataManager.Current.MercenaryData[currentTown] == null || DataManager.Current.MercenaryData[currentTown].Count == 0) return;
+                MercenaryTavernEntity mercenaryTavernEntity = DataManager.Current.MercenaryData[currentTown];
+                if (mercenaryTavernEntity == null) return;
+                int numOfTroopSlotsOpen = PartyBase.MainParty.PartySizeLimit - PartyBase.MainParty.NumberOfAllMembers;
+                int troopRecruitmentCost = Campaign.Current.Models.PartyWageModel.GetTroopRecruitmentCost(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, Hero.MainHero, false);
+                if (mercenaryTavernEntity.Count > 0 && Hero.MainHero.Gold >= troopRecruitmentCost && (!toPartyLimit || numOfTroopSlotsOpen > 0))
                 {
-                    int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
-                    numOfMercs = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
-                    if (toPartyLimit) numOfMercs = Math.Min(numOfTroopSlotsOpen, numOfMercs);
+                    int numOfMercs = 1;
+                    if (!buyingOne)
+                    {
+                        int numOfTroopPlayerCanBuy = (troopRecruitmentCost == 0) ? mercenaryTavernEntity.Count : Hero.MainHero.Gold / troopRecruitmentCost;
+                        numOfMercs = Math.Min(mercenaryTavernEntity.Count, numOfTroopPlayerCanBuy);
+                        if (toPartyLimit) numOfMercs = Math.Min(numOfTroopSlotsOpen, numOfMercs);
+                    }
+                    MobileParty.MainParty.MemberRoster.AddToCounts(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, numOfMercs, false, 0, 0, true, -1);
+                    GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, -(numOfMercs * troopRecruitmentCost), false);
+                    mercenaryTavernEntity.Count -= numOfMercs;
+                    GameMenu.SwitchToMenu("town_backstreet");
                 }
-                MobileParty.MainParty.MemberRoster.AddToCounts(DataManager.Current.BasicCharacterObjects[mercenaryTavernEntity.TroopID] as CharacterObject, numOfMercs, false, 0, 0, true, -1);
-                GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, -(numOfMercs * troopRecruitmentCost), false);
-                mercenaryTavernEntity.Count -= numOfMercs;
-                GameMenu.SwitchToMenu("town_backstreet");
+            }
+            catch (Exception ex)
+            {
+
             }
         }
     }
